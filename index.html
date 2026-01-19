@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>Redirect</title>
+</head>
+<body>
+<script>
+async function main(){
+  const token = new URL(location.href).searchParams.get("p") || "";
+  const res = await fetch("./status.json?ts=" + Date.now(), {cache:"no-store"});
+  const st = await res.json();
+
+  if(st.route === "form"){
+    const u = new URL(st.form.url);
+    if(st.form.prefillParamName && token){
+      u.searchParams.set(st.form.prefillParamName, token);
+    }
+    location.replace(u.toString());
+  }else{
+    location.replace("./schedule.html?p=" + encodeURIComponent(token));
+  }
+}
+main().catch(()=>location.replace("./schedule.html"));
+</script>
+</body>
+</html>
