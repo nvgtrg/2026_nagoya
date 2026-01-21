@@ -2,17 +2,39 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>2026 Nagoya</title>
   <style>
-    body { font-family: system-ui, sans-serif; margin: 24px; }
-    .btn { display:inline-block; padding:12px 16px; border:1px solid #ccc; border-radius:10px; text-decoration:none; }
+    /* 余白ゼロで、スマホ横幅を最大化 */
+    html, body { margin: 0; padding: 0; background: #000; }
+
+    /* 画像は画面幅100%（縦は比率維持） */
+    .hero {
+      display: block;
+      width: 100vw;
+      height: auto;
+      max-width: 100%;
+    }
+
+    /* 右上固定GIF（スクロールしても位置不変） */
+    .corner-gif {
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 0px) + 10px);
+      right: calc(env(safe-area-inset-right, 0px) + 10px);
+      width: 72px;       /* 好みで調整 */
+      height: 72px;      /* 好みで調整 */
+      z-index: 9999;
+      pointer-events: none; /* タップを邪魔しない */
+    }
   </style>
 </head>
+
 <body>
-  <h1>読み込み中…</h1>
-  <p id="msg">自動で遷移します。遷移しない場合は下のリンクを押してください。</p>
-  <p><a id="fallback" class="btn" href="#">開く</a></p>
+  <!-- 右上固定GIF -->
+  <img class="corner-gif" src="corner.gif" alt="" />
+
+  <!-- time.png を横幅最大で表示 -->
+  <img id="mainImg" class="hero" src="time.png" alt="schedule" />
 
   <script>
     (async () => {
@@ -22,25 +44,20 @@
         const cfg = await res.json();
 
         const mode = (cfg.mode || "view").toLowerCase();
-        const target = cfg.target || "assets/timetable.pdf";
+        const target = cfg.target || "time.png";
         const formUrl = cfg.formUrl || "";
 
-        let url = "./" + target;
         if (mode === "form") {
           if (!formUrl) throw new Error("formUrl is empty");
-          url = formUrl;
+          window.location.replace(formUrl);
+          return;
         }
 
-        document.querySelector("h1").textContent = (mode === "form") ? "フォームへ移動します" : "資料を表示します";
-        const a = document.getElementById("fallback");
-        a.href = url;
-        a.textContent = (mode === "form") ? "Googleフォームを開く" : "資料を開く";
+        // viewモード：表示画像を差し替え（time.png以外にもできる）
+        document.getElementById("mainImg").src = "./" + target;
 
-        // すぐ遷移（必要なら setTimeout で少し待たせてもOK）
-        window.location.replace(url);
       } catch (e) {
-        document.querySelector("h1").textContent = "エラー";
-        document.getElementById("msg").textContent = "設定の読み込みに失敗しました。config.json を確認してください。";
+        // 失敗時は最低限 time.png を表示し続ける
         console.error(e);
       }
     })();
