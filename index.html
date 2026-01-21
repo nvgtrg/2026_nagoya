@@ -1,27 +1,49 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<title>Redirect</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>2026 Nagoya</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 24px; }
+    .btn { display:inline-block; padding:12px 16px; border:1px solid #ccc; border-radius:10px; text-decoration:none; }
+  </style>
 </head>
 <body>
-<script>
-async function main(){
-  const token = new URL(location.href).searchParams.get("p") || "";
-  const res = await fetch("./status.json?ts=" + Date.now(), {cache:"no-store"});
-  const st = await res.json();
+  <h1>読み込み中…</h1>
+  <p id="msg">自動で遷移します。遷移しない場合は下のリンクを押してください。</p>
+  <p><a id="fallback" class="btn" href="#">開く</a></p>
 
-  if(st.route === "form"){
-    const u = new URL(st.form.url);
-    if(st.form.prefillParamName && token){
-      u.searchParams.set(st.form.prefillParamName, token);
-    }
-    location.replace(u.toString());
-  }else{
-    location.replace("./schedule.html?p=" + encodeURIComponent(token));
-  }
-}
-main().catch(()=>location.replace("./schedule.html"));
-</script>
+  <script>
+    (async () => {
+      try {
+        const res = await fetch("./config.json", { cache: "no-store" });
+        if (!res.ok) throw new Error("config.json fetch failed: " + res.status);
+        const cfg = await res.json();
+
+        const mode = (cfg.mode || "view").toLowerCase();
+        const target = cfg.target || "assets/timetable.pdf";
+        const formUrl = cfg.formUrl || "";
+
+        let url = "./" + target;
+        if (mode === "form") {
+          if (!formUrl) throw new Error("formUrl is empty");
+          url = formUrl;
+        }
+
+        document.querySelector("h1").textContent = (mode === "form") ? "フォームへ移動します" : "資料を表示します";
+        const a = document.getElementById("fallback");
+        a.href = url;
+        a.textContent = (mode === "form") ? "Googleフォームを開く" : "資料を開く";
+
+        // すぐ遷移（必要なら setTimeout で少し待たせてもOK）
+        window.location.replace(url);
+      } catch (e) {
+        document.querySelector("h1").textContent = "エラー";
+        document.getElementById("msg").textContent = "設定の読み込みに失敗しました。config.json を確認してください。";
+        console.error(e);
+      }
+    })();
+  </script>
 </body>
 </html>
